@@ -2,95 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@500;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 40 14% 96%;
+    --foreground: 60 5% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 60 5% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 60 5% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 150 37% 26%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 40 10% 93%;
+    --secondary-foreground: 60 5% 10%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 10% 93%;
+    --muted-foreground: 50 4% 49%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 150 37% 26%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 49% 49%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 36 13% 87%;
+    --input: 36 13% 87%;
+    --ring: 150 37% 26%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom CareerLaunch tokens */
+    --cl-accent: 150 37% 26%;
+    --cl-accent2: 145 36% 55%;
+    --cl-blue: 213 63% 33%;
+    --cl-blue-lt: 216 53% 94%;
+    --cl-amber: 33 76% 44%;
+    --cl-amber-lt: 39 90% 94%;
+    --cl-red: 0 49% 49%;
+    --cl-red-lt: 0 71% 95%;
+    --cl-surface: 0 0% 100%;
+    --cl-surface2: 40 10% 93%;
+    --cl-sidebar: 150 25% 13%;
+    --cl-sidebar-text: 150 20% 65%;
+    --cl-sidebar-hover: 150 20% 75%;
+    --cl-text: 60 5% 10%;
+    --cl-text2: 55 4% 40%;
+    --cl-text3: 50 4% 60%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 150 25% 13%;
+    --sidebar-foreground: 150 20% 65%;
+    --sidebar-primary: 150 37% 26%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 150 25% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 150 15% 25%;
+    --sidebar-ring: 150 37% 26%;
   }
 }
 
@@ -101,5 +72,76 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
+  }
+}
+
+@layer components {
+  .cl-card {
+    @apply bg-card border border-border rounded-2xl p-4;
+  }
+  .cl-card-sm {
+    @apply bg-card border border-border rounded-xl p-3;
+  }
+  .cl-stat-card {
+    @apply bg-card border border-border rounded-2xl p-3.5;
+  }
+  .cl-tag {
+    @apply inline-block px-2 py-0.5 rounded-full text-[10.5px] font-medium;
+  }
+  .cl-tag-green {
+    @apply bg-[hsl(var(--cl-accent2)/0.15)] text-[hsl(var(--cl-accent))];
+  }
+  .cl-tag-blue {
+    @apply bg-[hsl(var(--cl-blue-lt))] text-[hsl(var(--cl-blue))];
+  }
+  .cl-tag-amber {
+    @apply bg-[hsl(var(--cl-amber-lt))] text-[hsl(var(--cl-amber))];
+  }
+  .cl-tag-red {
+    @apply bg-[hsl(var(--cl-red-lt))] text-[hsl(var(--cl-red))];
+  }
+  .cl-tag-gray {
+    @apply bg-[hsl(var(--cl-surface2))] text-[hsl(var(--cl-text2))];
+  }
+  .cl-btn {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-medium cursor-pointer border-none transition-all;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cl-btn-primary {
+    @apply bg-[hsl(var(--cl-accent))] text-white hover:bg-[hsl(150_37%_20%)];
+  }
+  .cl-btn-outline {
+    @apply bg-transparent text-[hsl(var(--cl-text2))] border border-border hover:bg-[hsl(var(--cl-surface2))];
+  }
+  .cl-btn-sm {
+    @apply py-1.5 px-3 text-[11.5px];
+  }
+  .cl-input {
+    @apply w-full py-2.5 px-3 border border-border rounded-lg text-[12.5px] text-foreground bg-card outline-none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cl-input:focus {
+    @apply border-[hsl(var(--cl-accent))];
+    box-shadow: 0 0 0 3px hsl(var(--cl-accent) / 0.1);
+  }
+  .cl-label {
+    @apply text-[11.5px] font-medium text-[hsl(var(--cl-text2))] mb-1 block;
+  }
+  .cl-progress-bar {
+    @apply h-1.5 bg-[hsl(var(--cl-surface2))] rounded-full overflow-hidden;
+  }
+  .cl-progress-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+  .cl-section-title {
+    @apply text-sm font-semibold text-foreground;
+  }
+  .cl-skill-chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[hsl(var(--cl-surface2))] text-[hsl(var(--cl-text2))] m-0.5;
   }
 }
