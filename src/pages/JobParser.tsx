@@ -15,6 +15,7 @@ interface AnalysisResult {
   company?: string;
   seniority_level?: string;
   role_type?: string;
+  skill_gaps?: SkillGap[];
 }
 
 interface SkillGapAnalysis {
@@ -117,10 +118,9 @@ const JobParser = () => {
         title: "Success",
         description: "Learning path created with AI-powered concept teaching!",
       });
-      // @ts-ignore
       const gapSkills = (result.skill_gaps || [])
-        .filter((g: any) => g.level === "Gap")
-        .map((g: any) => g.name);
+        .filter((g) => g.level === "Gap")
+        .map((g) => g.name);
       const params = new URLSearchParams();
       if (result.job_title) params.set("job_title", result.job_title);
       if (result.required_skills?.length)
@@ -136,7 +136,6 @@ const JobParser = () => {
     }
   };
 
-  // @ts-ignore
   const gaps: SkillGap[] = result?.skill_gaps || [
     { name: "React.js", level: "Strong", pct: 88, color: "bg-cl-accent2", textColor: "text-cl-accent2" },
     { name: "TypeScript", level: "Good", pct: 72, color: "bg-cl-accent2", textColor: "text-cl-accent2" },

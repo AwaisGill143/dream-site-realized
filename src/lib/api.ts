@@ -130,11 +130,7 @@ class APIClient {
     formData.append('file', file);
     formData.append('is_primary', isPrimary.toString());
     
-    return this.client.post('/api/v1/users/me/resume/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return this.client.post('/api/v1/users/me/resume/upload', formData);
   }
 
   getPrimaryResume() {
@@ -230,9 +226,11 @@ class APIClient {
   }
 
   // Interview endpoints
-  startInterview(jobAnalysisId?: number) {
+  startInterview(jobAnalysisId?: number, title?: string) {
     return this.client.post('/api/v1/interviews', {
+      title: title || 'Mock Interview',
       job_analysis_id: jobAnalysisId,
+      duration_minutes: 30,
     });
   }
 
@@ -245,8 +243,8 @@ class APIClient {
   }
 
   submitInterviewResponse(interviewId: number, response: string) {
-    return this.client.post(`/api/v1/interviews/${interviewId}/response`, {
-      response,
+    return this.client.post(`/api/v1/interviews/${interviewId}/respond`, {
+      message: response,
     });
   }
 
