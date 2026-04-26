@@ -36,16 +36,25 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const [jobsRes, interviewsRes, perfRes, resumeRes, perfStatsRes] = await Promise.all([
-          apiClient.getMyJobAnalyses().catch(() => ({ data: [] })),
-          apiClient.getMyInterviews().catch(() => ({ data: [] })),
-          apiClient.getMyAssessments().catch(() => ({ data: [] })),
+          apiClient.getMyJobAnalyses().catch(() => ({ data: { data: [] } })),
+          apiClient.getMyInterviews().catch(() => ({ data: { data: [] } })),
+          apiClient.getMyAssessments().catch(() => ({ data: { data: [] } })),
           apiClient.getPrimaryResume().catch(() => null),
           apiClient.getPerformanceStats().catch(() => null),
         ]);
 
-        setJobAnalyses(jobsRes.data || []);
-        setInterviews(interviewsRes.data || []);
-        setPerformances(perfRes.data || []);
+        const jobs = jobsRes.data?.data ?? jobsRes.data ?? [];
+        const ivws = interviewsRes.data?.data ?? interviewsRes.data ?? [];
+        const assessments = perfRes.data?.data ?? perfRes.data ?? [];
+
+        setJobAnalyses(jobs);
+        setInterviews(ivws);
+        // Merge assessments + interviews into a unified recent-activity list
+        const merged = [
+          ...assessments.map((a: any) => ({ ...a, activity_type: a.activity_type ?? 'assessment' })),
+          ...ivws.map((i: any) => ({ ...i, activity_type: 'interview', score: i.overall_score ?? i.score })),
+        ].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        setPerformances(merged);
         setResume(resumeRes?.data || null);
         setPerformanceStats(perfStatsRes?.data || null);
 
