@@ -107,6 +107,44 @@ class APIClient {
     return this.client.get(`/api/v1/jobs/${analysisId}/readiness-score`);
   }
 
+  // Skill Gap Analysis endpoints
+  analyzeSkillGaps(jobAnalysisId: number, resumeId?: number) {
+    return this.client.get(`/api/v1/jobs/${jobAnalysisId}/skill-gap-analysis`, {
+      params: { resume_id: resumeId }
+    });
+  }
+
+  getLearningRecommendations(jobAnalysisId: number) {
+    return this.client.get(`/api/v1/jobs/${jobAnalysisId}/learning-recommendations`);
+  }
+
+  explainConcept(skillName: string, level: string = 'beginner') {
+    return this.client.post(`/api/v1/jobs/concepts/${skillName}/explain`, {
+      level
+    });
+  }
+
+  // Resume endpoints
+  uploadResume(file: File, isPrimary: boolean = true) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('is_primary', isPrimary.toString());
+    
+    return this.client.post('/api/v1/users/me/resume/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
+
+  getPrimaryResume() {
+    return this.client.get('/api/v1/users/me/resume/primary');
+  }
+
+  getMyResumes() {
+    return this.client.get('/api/v1/users/me/resume');
+  }
+
   // Assessment endpoints
   createAssessment(assessmentType: string, jobAnalysisId?: number, difficulty?: string) {
     return this.client.post('/api/v1/assessments', {
@@ -147,6 +185,19 @@ class APIClient {
 
   submitAssessment(assessmentId: number) {
     return this.client.post(`/api/v1/assessments/${assessmentId}/complete`, {});
+  }
+
+  logPerformance(activityType: string, score?: number, timeTakenSeconds?: number, skillTags?: string[]) {
+    return this.client.post('/api/v1/analytics/performance', {
+      activity_type: activityType,
+      score,
+      time_taken_seconds: timeTakenSeconds,
+      skill_tags: skillTags || [],
+    });
+  }
+
+  getPerformanceStats() {
+    return this.client.get('/api/v1/analytics/performance/stats');
   }
 
   // Learning Path endpoints

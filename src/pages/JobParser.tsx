@@ -1,14 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-
-const skills = {
-  required: ["React.js", "TypeScript", "REST APIs", "System Design", "Performance Opt."],
-  preferred: ["GraphQL", "Jest/Testing", "CI/CD"],
-  stack: ["Node.js", "PostgreSQL", "Docker", "AWS"],
-};
 
 interface AnalysisResult {
   id: number;
@@ -21,7 +15,16 @@ interface AnalysisResult {
   company?: string;
   seniority_level?: string;
   role_type?: string;
-  skill_gaps?: Array<{ name: string; level: string; pct: number; color: string; textColor: string }>;
+}
+
+interface SkillGapAnalysis {
+  id: number;
+  resume_skills: string[];
+  required_skills: string[];
+  matching_skills: string[];
+  gap_skills: string[];
+  gap_percentage: number;
+  priority_skills: string[];
 }
 
 interface SkillGap {
@@ -41,7 +44,28 @@ const JobParser = () => {
   const [jobUrl, setJobUrl] = useState("https://careers.google.com/jobs/fe-2024");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [skillGapAnalysis, setSkillGapAnalysis] = useState<SkillGapAnalysis | null>(null);
+  const [loadingGaps, setLoadingGaps] = useState(false);
   const [step, setStep] = useState(0);
+
+  // Fetch skill gap analysis after job analysis
+  useEffect(() => {
+    if (result?.id) {
+      fetchSkillGaps(result.id);
+    }
+  }, [result?.id]);
+
+  const fetchSkillGaps = async (jobAnalysisId: number) => {
+    setLoadingGaps(true);
+    try {
+      const response = await apiClient.analyzeSkillGaps(jobAnalysisId);
+      setSkillGapAnalysis(response.data);
+    } catch (error: any) {
+      console.error("Error fetching skill gaps:", error);
+    } finally {
+      setLoadingGaps(false);
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!jobDescription.trim()) {
@@ -64,7 +88,7 @@ const JobParser = () => {
       
       toast({
         title: "Success",
-        description: "Job analyzed successfully!",
+        description: "Job analyzed successfully! Comparing with your resume...",
       });
     } catch (error: any) {
       toast({
@@ -77,7 +101,31 @@ const JobParser = () => {
     }
   };
 
-  const handleCreateLearningPath = () => {
+  const handleCreateLearningPath = async () => {
+    if (!result?.id) {
+      toast({
+        title: "Error",
+        description: "Please analyze a job first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await apiClient.generateLearningPath(result.id);
+      toast({
+        title: "Success",
+        description: "Learning path created with AI-powered concept teaching!",
+      });
+      navigate(`/learning`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to create learning path",
+        variant: "destructive",
+      });
+    }
+  };
     if (!result) {
       toast({
         title: "Error",

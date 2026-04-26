@@ -11,6 +11,14 @@ interface JobAnalysis {
   status?: string;
   readiness_score?: number;
   required_skills?: string[];
+  job_description?: string;
+}
+
+interface Resume {
+  id: number;
+  file_name: string;
+  extracted_skills: string[];
+  is_primary: boolean;
 }
 
 const Dashboard = () => {
@@ -19,32 +27,36 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [jobAnalyses, setJobAnalyses] = useState<JobAnalysis[]>([]);
   const [interviews, setInterviews] = useState([]);
+  const [performances, setPerformances] = useState([]);
+  const [resume, setResume] = useState<Resume | null>(null);
+  const [performanceStats, setPerformanceStats] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [jobsRes, interviewsRes] = await Promise.all([
-          apiClient.getMyJobAnalyses(),
-          apiClient.getMyInterviews(),
+        const [jobsRes, interviewsRes, perfRes, resumeRes, perfStatsRes] = await Promise.all([
+          apiClient.getMyJobAnalyses().catch(() => ({ data: [] })),
+          apiClient.getMyInterviews().catch(() => ({ data: [] })),
+          apiClient.getMyAssessments().catch(() => ({ data: [] })),
+          apiClient.getPrimaryResume().catch(() => null),
+          apiClient.getPerformanceStats().catch(() => null),
         ]);
 
         setJobAnalyses(jobsRes.data || []);
         setInterviews(interviewsRes.data || []);
+        setPerformances(perfRes.data || []);
+        setResume(resumeRes?.data || null);
+        setPerformanceStats(perfStatsRes?.data || null);
 
-        if (jobsRes.data?.length === 0 && interviewsRes.data?.length === 0) {
+        if (!jobsRes.data?.length && !interviewsRes.data?.length) {
           toast({
             title: "Welcome!",
-            description: "Start by analyzing a job or creating an assessment.",
+            description: "Start by uploading your resume and analyzing a job.",
           });
         }
       } catch (error: any) {
         console.error("Error fetching dashboard data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load dashboard data",
-          variant: "destructive",
-        });
       } finally {
         setLoading(false);
       }
@@ -59,10 +71,52 @@ const Dashboard = () => {
       label: "Jobs Analyzed",
       delta: `${jobAnalyses.length} total`,
     },
-    { val: `${interviews.length}`, label: "Interviews Practiced", delta: "Recent sessions" },
-    { val: jobAnalyses.length > 0 ? Math.round(jobAnalyses[0]?.readiness_score || 0) + "%" : "0%", label: "Avg Readiness", delta: "Current job" },
-    { val: "∞", label: "Unlimited", delta: "Practice mode" },
+    { 
+      val: `${interviews.length}`, 
+      label: "Interviews Practiced", 
+      delta: `${interviews.length} sessions` 
+    },
+    { 
+      val: jobAnalyses.length > 0 ? Math.round(jobAnalyses[0]?.readiness_score || 0) + "%" : "0%", 
+      label: "Avg Readiness", 
+      delta: "Latest job" 
+    },
+    { 
+      val: resume ? "✓" : "⊘", 
+      label: "Resume Status", 
+      delta: resume ? "Uploaded" : "Upload now" 
+    },
   ];
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const response = await apiClient.uploadResume(file, true);
+      setResume(response.data);
+      toast({
+        title: "Success",
+        description: "Resume uploaded and parsed successfully!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to upload resume",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppShell title="Dashboard" subtitle="Loading...">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-cl-text3">Loading your dashboard...</div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell
@@ -70,6 +124,12 @@ const Dashboard = () => {
       subtitle={new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
       actions={
         <>
+          {!resume && (
+            <label className="cl-btn cl-btn-outline cl-btn-sm cursor-pointer">
+              📄 Add Resume
+              <input type="file" onChange={handleResumeUpload} accept=".pdf,.docx,.txt" hidden />
+            </label>
+          )}
           <button onClick={() => navigate("/parser")} className="cl-btn cl-btn-outline cl-btn-sm">
             + New Job
           </button>
@@ -95,92 +155,113 @@ const Dashboard = () => {
         <div>
           <div className="flex items-center justify-between mb-3.5">
             <div className="cl-section-title">Active Job Targets</div>
-            <span className="text-[11px] text-cl-accent cursor-pointer">View all</span>
+            {jobAnalyses.length > 2 && <span className="text-[11px] text-cl-accent cursor-pointer">View all</span>}
           </div>
-          <div className="cl-card-sm mb-2.5">
-            <div className="flex items-center justify-between mb-1.5">
-              <div>
-                <div className="text-[13px] font-semibold">Frontend Engineer</div>
-                <div className="text-[11px] text-cl-text3">Google · Remote</div>
-              </div>
-              <span className="cl-tag cl-tag-amber">In Progress</span>
-            </div>
-            <div className="mb-1.5">
-              <div className="flex justify-between text-[11px] mb-0.5">
-                <span className="text-cl-text3">Readiness</span>
-                <span className="font-semibold">73%</span>
-              </div>
-              <div className="cl-progress-bar"><div className="cl-progress-fill bg-cl-accent2" style={{ width: "73%" }} /></div>
-            </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              <span className="cl-skill-chip">React</span>
-              <span className="cl-skill-chip">TypeScript</span>
-              <span className="cl-skill-chip">System Design</span>
-              <span className="cl-skill-chip bg-cl-red-lt text-cl-red">GraphQL ✗</span>
-            </div>
-          </div>
-          <div className="cl-card-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div>
-                <div className="text-[13px] font-semibold">Full Stack Developer</div>
-                <div className="text-[11px] text-cl-text3">Meta · Hybrid</div>
-              </div>
-              <span className="cl-tag cl-tag-blue">Analyzing</span>
-            </div>
+          {jobAnalyses.length > 0 ? (
             <div>
-              <div className="flex justify-between text-[11px] mb-0.5">
-                <span className="text-cl-text3">Readiness</span>
-                <span className="font-semibold">61%</span>
-              </div>
-              <div className="cl-progress-bar"><div className="cl-progress-fill bg-cl-accent2" style={{ width: "61%" }} /></div>
+              {jobAnalyses.slice(0, 2).map((job, idx) => (
+                <div key={job.id} className={`cl-card-sm ${idx < 1 ? "mb-2.5" : ""}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div>
+                      <div className="text-[13px] font-semibold">{job.title || "Job Analysis"}</div>
+                      <div className="text-[11px] text-cl-text3">{job.company || "Job Position"}</div>
+                    </div>
+                    <span className={`cl-tag ${job.readiness_score && job.readiness_score > 70 ? "cl-tag-green" : "cl-tag-amber"}`}>
+                      {Math.round(job.readiness_score || 0)}%
+                    </span>
+                  </div>
+                  <div className="mb-1.5">
+                    <div className="flex justify-between text-[11px] mb-0.5">
+                      <span className="text-cl-text3">Readiness</span>
+                      <span className="font-semibold">{Math.round(job.readiness_score || 0)}%</span>
+                    </div>
+                    <div className="cl-progress-bar">
+                      <div className="cl-progress-fill bg-cl-accent2" style={{ width: `${job.readiness_score || 0}%` }} />
+                    </div>
+                  </div>
+                  {job.required_skills && job.required_skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {job.required_skills.slice(0, 4).map((skill, i) => (
+                        <span key={i} className="cl-skill-chip">{skill}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="cl-card-sm p-4 text-center">
+              <p className="text-[12px] text-cl-text3">No jobs analyzed yet</p>
+              <button onClick={() => navigate("/parser")} className="text-[11px] text-cl-accent mt-2 hover:underline">
+                Start by analyzing a job
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Skill Radar */}
+        {/* Resume & Skill Summary */}
         <div>
-          <div className="mb-3.5"><div className="cl-section-title">Skill Radar</div></div>
-          <div className="cl-card flex items-center justify-center p-2.5">
-            <svg width="190" height="190" viewBox="0 0 190 190">
-              <g transform="translate(95,95)">
-                <polygon points="0,-70 60.6,-35 60.6,35 0,70 -60.6,35 -60.6,-35" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <polygon points="0,-52 45.5,-26 45.5,26 0,52 -45.5,26 -45.5,-26" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <polygon points="0,-35 30.3,-17.5 30.3,17.5 0,35 -30.3,17.5 -30.3,-17.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <line x1="0" y1="-70" x2="0" y2="70" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <line x1="60.6" y1="-35" x2="-60.6" y2="35" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <line x1="60.6" y1="35" x2="-60.6" y2="-35" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                <polygon points="0,-58 48,-21 42,28 -10,62 -50,20 -44,-30" fill="rgba(42,92,69,.15)" stroke="rgba(42,92,69,.7)" strokeWidth="1.5" />
-                <text y="-76" textAnchor="middle" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">React/TS</text>
-                <text x="68" y="-32" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">System Design</text>
-                <text x="64" y="42" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">Algorithms</text>
-                <text y="80" textAnchor="middle" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">Behavioral</text>
-                <text x="-105" y="28" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">Backend</text>
-                <text x="-72" y="-34" fontSize="9" fill="hsl(var(--cl-text3))" fontFamily="DM Sans">DSA</text>
-              </g>
-            </svg>
-          </div>
+          <div className="mb-3.5"><div className="cl-section-title">Resume & Skills</div></div>
+          {resume ? (
+            <div className="cl-card-sm mb-2.5">
+              <div className="text-[13px] font-semibold mb-2">📄 {resume.file_name}</div>
+              <div className="text-[11px] text-cl-text3 mb-2">
+                <span className="font-medium">Extracted Skills: </span>
+                {resume.extracted_skills.length}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {resume.extracted_skills.slice(0, 5).map((skill, i) => (
+                  <span key={i} className="cl-skill-chip text-[10px]">{skill}</span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="cl-card-sm p-4 text-center border-2 border-dashed">
+              <p className="text-[12px] text-cl-text3 mb-2">No resume uploaded</p>
+              <label className="text-[11px] text-cl-accent hover:underline cursor-pointer">
+                Upload your resume
+                <input type="file" onChange={handleResumeUpload} accept=".pdf,.docx,.txt" hidden />
+              </label>
+            </div>
+          )}
+
+          {performanceStats && (
+            <div className="cl-card-sm p-3 mt-2.5">
+              <div className="text-[11px] font-semibold mb-2">Performance Summary</div>
+              <div className="text-[10px] text-cl-text3 space-y-1">
+                {Object.entries(performanceStats).map(([key, stats]: any) => (
+                  <div key={key} className="flex justify-between">
+                    <span>{key}</span>
+                    <span>{stats.count} attempts</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="mt-4">
-        <div className="mb-3.5"><div className="cl-section-title">Recent Activity</div></div>
-        <div className="cl-card p-3">
-          {[
-            { color: "bg-cl-accent2", title: "Completed MCQ Assessment", sub: "React Fundamentals · 18/20 correct · 2 hours ago" },
-            { color: "bg-cl-accent2", title: "Mock Interview Session", sub: "Frontend Engineer @ Google · 45 min · Yesterday" },
-            { color: "bg-cl-amber", title: "Learning Path Updated", sub: "3 new GraphQL resources added · 2 days ago" },
-          ].map((item, i) => (
-            <div key={i} className={`flex gap-3 ${i < 2 ? "mb-3.5" : ""}`}>
-              <div className={`w-2.5 h-2.5 rounded-full ${item.color} mt-1 flex-shrink-0`} />
-              <div>
-                <div className="text-[12.5px] font-medium">{item.title}</div>
-                <div className="text-[11px] text-cl-text3">{item.sub}</div>
+      {performances.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-3.5"><div className="cl-section-title">Recent Activity</div></div>
+          <div className="cl-card p-3">
+            {performances.slice(0, 3).map((perf: any, i: number) => (
+              <div key={perf.id} className={`flex gap-3 ${i < 2 ? "mb-3.5" : ""}`}>
+                <div className="w-2.5 h-2.5 rounded-full bg-cl-accent2 mt-1 flex-shrink-0" />
+                <div>
+                  <div className="text-[12.5px] font-medium capitalize">
+                    {perf.activity_type} {perf.score ? `- ${Math.round(perf.score)}%` : ""}
+                  </div>
+                  <div className="text-[11px] text-cl-text3">
+                    {perf.time_taken_seconds ? `${Math.round(perf.time_taken_seconds / 60)} min` : "Just now"}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </AppShell>
   );
 };
