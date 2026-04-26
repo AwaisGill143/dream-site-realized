@@ -1,21 +1,81 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-const stats = [
-  { val: "73%", label: "Overall Readiness", delta: "↑ 8% this week" },
-  { val: "12", label: "Interviews Practiced", delta: "↑ 3 new" },
-  { val: "5", label: "Jobs Analyzed", delta: "2 active" },
-  { val: "84%", label: "Assessment Avg.", delta: "↑ 12%" },
-];
+interface JobAnalysis {
+  id: number;
+  title?: string;
+  company?: string;
+  status?: string;
+  readiness_score?: number;
+  required_skills?: string[];
+}
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [jobAnalyses, setJobAnalyses] = useState<JobAnalysis[]>([]);
+  const [interviews, setInterviews] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [jobsRes, interviewsRes] = await Promise.all([
+          apiClient.getMyJobAnalyses(),
+          apiClient.getMyInterviews(),
+        ]);
+
+        setJobAnalyses(jobsRes.data || []);
+        setInterviews(interviewsRes.data || []);
+
+        if (jobsRes.data?.length === 0 && interviewsRes.data?.length === 0) {
+          toast({
+            title: "Welcome!",
+            description: "Start by analyzing a job or creating an assessment.",
+          });
+        }
+      } catch (error: any) {
+        console.error("Error fetching dashboard data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const stats = [
+    {
+      val: `${jobAnalyses.length}`,
+      label: "Jobs Analyzed",
+      delta: `${jobAnalyses.length} total`,
+    },
+    { val: `${interviews.length}`, label: "Interviews Practiced", delta: "Recent sessions" },
+    { val: jobAnalyses.length > 0 ? Math.round(jobAnalyses[0]?.readiness_score || 0) + "%" : "0%", label: "Avg Readiness", delta: "Current job" },
+    { val: "∞", label: "Unlimited", delta: "Practice mode" },
+  ];
+
   return (
     <AppShell
       title="Dashboard"
-      subtitle="Monday, March 2026"
+      subtitle={new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
       actions={
         <>
-          <button className="cl-btn cl-btn-outline cl-btn-sm">+ New Job</button>
-          <button className="cl-btn cl-btn-primary cl-btn-sm">Start Interview</button>
+          <button onClick={() => navigate("/parser")} className="cl-btn cl-btn-outline cl-btn-sm">
+            + New Job
+          </button>
+          <button onClick={() => navigate("/interview")} className="cl-btn cl-btn-primary cl-btn-sm">
+            Start Interview
+          </button>
         </>
       }
     >

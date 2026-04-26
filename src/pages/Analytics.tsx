@@ -1,25 +1,71 @@
+import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-const stats = [
-  { val: "73%", label: "Readiness Score", delta: "↑ 8% this week", highlight: true },
-  { val: "84%", label: "MCQ Avg.", delta: "↑ 12%" },
-  { val: "12", label: "Interviews Done", delta: "4h 30m total" },
-  { val: "7/9", label: "Coding Passed", delta: "78% pass rate" },
-];
-
-const skills = [
-  { name: "React / TypeScript", pct: 88, color: "bg-cl-accent2", textColor: "text-cl-accent2" },
-  { name: "Algorithms & DSA", pct: 81, color: "bg-cl-accent2", textColor: "text-cl-accent2" },
-  { name: "System Design", pct: 64, color: "bg-cl-amber", textColor: "text-cl-amber" },
-  { name: "Behavioral", pct: 72, color: "bg-cl-amber", textColor: "text-cl-amber" },
-  { name: "GraphQL", pct: 18, color: "bg-cl-red", textColor: "text-cl-red" },
-];
+interface AnalyticsData {
+  total_assessments: number;
+  completed_assessments: number;
+  avg_assessment_score: number;
+  total_interviews: number;
+  completed_interviews: number;
+  avg_interview_score: number;
+  avg_readiness: number;
+  total_jobs_analyzed: number;
+}
 
 const Analytics = () => {
+  const { toast } = useToast();
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await apiClient.getAnalytics();
+        setAnalytics(response.data);
+      } catch (error: any) {
+        console.error("Error fetching analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  const stats = [
+    {
+      val: analytics?.avg_readiness.toFixed(0) ?? "—",
+      label: "Readiness Score",
+      delta: "Performance",
+      highlight: true,
+    },
+    { val: analytics?.avg_assessment_score.toFixed(0) ?? "—", label: "Assessment Avg.", delta: "Score" },
+    { val: analytics?.total_interviews ?? "0", label: "Interviews Done", delta: "Total" },
+    { val: analytics?.total_jobs_analyzed ?? "0", label: "Jobs Analyzed", delta: "Tracked" },
+  ];
+
+  const skills = [
+    { name: "React / TypeScript", pct: 88, color: "bg-cl-accent2", textColor: "text-cl-accent2" },
+    { name: "Algorithms & DSA", pct: 81, color: "bg-cl-accent2", textColor: "text-cl-accent2" },
+    { name: "System Design", pct: 64, color: "bg-cl-amber", textColor: "text-cl-amber" },
+    { name: "Behavioral", pct: 72, color: "bg-cl-amber", textColor: "text-cl-amber" },
+    { name: "GraphQL", pct: 18, color: "bg-cl-red", textColor: "text-cl-red" },
+  ];
+
+  if (loading) {
+    return (
+      <AppShell title="Analytics" subtitle="Loading...">
+        <div className="text-center p-8">Loading your analytics...</div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
       title="Analytics"
-      subtitle="Frontend Engineer @ Google · 3 weeks of data"
+      subtitle="Your performance & progress tracking"
       actions={
         <select className="cl-input w-auto py-1.5 px-2.5 text-[11.5px]">
           <option>Last 30 days</option>
