@@ -23,6 +23,12 @@ class APIClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // Don't override Content-Type for FormData (let axios set it with boundary)
+        if (config.data instanceof FormData) {
+          delete config.headers['Content-Type'];
+        }
+        
         return config;
       },
       (error) => Promise.reject(error)
